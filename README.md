@@ -7,20 +7,20 @@ The pipeline generates synthetic marketing data, applies data cleaning and trans
 
 ## Project Structure
 
-
-
-## Project Structure
-
-
-
 data/ # Stores data at different processing stages
+
 ├── bronze/ # Raw synthetic data (Parquet & CSV)
+
 ├── silver/ # Cleaned and transformed data (Parquet & CSV)
+
 └── gold/ # Aggregated KPI data (Parquet & CSV)
 
 src/ # Python scripts for data processing
+
 ├── bronze/ # Raw data generation
+
 ├── silver/ # Data cleaning and transformation
+
 └── gold/ # KPI calculation
 
 .gitignore # Files/directories excluded from version control
@@ -81,7 +81,9 @@ requirements.txt # Python dependencies
 Output
 
 Bronze: Raw data containing customer and campaign details.
+
 Silver: Cleaned and validated datasets with standardized formats.
+
 Gold: KPI datasets including:
   - CTR (Click-Through Rate)
   - CVR (Conversion Rate)
