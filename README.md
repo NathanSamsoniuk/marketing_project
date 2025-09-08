@@ -1,88 +1,91 @@
-Marketing Data Pipeline
+# Marketing Data Pipeline
 
-Overview
+## Overview
+This project implements a data engineering pipeline for processing marketing data across three distinct layers: **Bronze**, **Silver**, and **Gold**.  
 
-This project implements a data engineering pipeline for processing marketing data through three distinct layers: bronze, silver, and gold. It generates synthetic marketing data, performs cleaning and transformation, and calculates key performance indicators (KPIs) for analysis. The pipeline is designed for modularity, scalability, and maintainability, with data stored in both Parquet and CSV formats for flexibility and accessibility.
+The pipeline generates synthetic marketing data, applies data cleaning and transformation, and calculates key performance indicators (KPIs) for analysis. It is designed with **modularity, scalability, and maintainability** in mind. All data is stored in both **Parquet** and **CSV** formats to balance efficiency and accessibility.
 
-Project Structure
-
-data/: Stores data at different processing stages:
-
-bronze/: Contains raw synthetic data in Parquet and CSV formats (e.g., marketing_<timestamp>.parquet, marketing_<timestamp>.csv).
-
-silver/: Contains cleaned and transformed data in Parquet and CSV formats.
-
-gold/: Contains aggregated data with KPIs in Parquet and CSV formats (e.g., marketing_metrics_<timestamp>.parquet, marketing_metrics_<timestamp>.csv).
+## Project Structure
 
 
-src/: Contains Python scripts for data processing, organized by layer:
 
-bronze/: generate_raw_marketing_data.py generates synthetic marketing data using the Faker library.
-
-silver/: clean_transform_marketing.py cleans raw data, removes duplicates, standardizes data types, and validates data.
-
-gold/: aggregate_kpi_marketing.py calculates KPIs such as CTR, CVR, CPC, CPA, ROAS, and margin.
+## Project Structure
 
 
-.gitignore: Specifies files and directories to exclude from version control (e.g., virtual environments, temporary files).
 
-.python-version: Specifies the Python version for the project, managed by pyenv.
+data/ # Stores data at different processing stages
+├── bronze/ # Raw synthetic data (Parquet & CSV)
+├── silver/ # Cleaned and transformed data (Parquet & CSV)
+└── gold/ # Aggregated KPI data (Parquet & CSV)
 
-requirements.txt: Lists Python dependencies required for the project (e.g., pandas, faker, pyarrow).
+src/ # Python scripts for data processing
+├── bronze/ # Raw data generation
+├── silver/ # Data cleaning and transformation
+└── gold/ # KPI calculation
 
-Pipeline Workflow
-
-Bronze Layer: The generate_raw_marketing_data.py script creates synthetic marketing data, including customer details, campaign metrics, and timestamps. Data is saved in data/bronze.
-
-Silver Layer: The clean_transform_marketing.py script reads the latest bronze data, removes duplicates, standardizes data types, handles missing values, and performs validations. Output is saved in data/silver.
-
-Gold Layer: The aggregate_kpi_marketing.py script reads the latest silver data, calculates KPIs for each record, and saves the results in data/gold.
-
-Prerequisites
-
-pyenv installed to manage Python versions
-
-Python version matching the one specified in .python-version
-
-A virtual environment with dependencies installed (listed in requirements.txt)
-
-How to Run
-
-Set the Python version using pyenv based on .python-version:pyenv local
+.gitignore # Files/directories excluded from version control
+.python-version # Python version (managed with pyenv)
+requirements.txt # Python dependencies
 
 
-Verify the Python version:python --version
+### Data Layers
+- **Bronze**: Raw synthetic data files (e.g., `marketing_<timestamp>.parquet`, `marketing_<timestamp>.csv`).  
+- **Silver**: Cleaned and transformed datasets.  
+- **Gold**: Aggregated KPI datasets (e.g., `marketing_metrics_<timestamp>.parquet`, `marketing_metrics_<timestamp>.csv`).  
 
+### Scripts
+- **Bronze Layer**  
+  `generate_raw_marketing_data.py` → Generates synthetic marketing data using the *Faker* library.  
+- **Silver Layer**  
+  `clean_transform_marketing.py` → Cleans raw data, removes duplicates, standardizes data types, and validates records.  
+- **Gold Layer**  
+  `calculate_kpi_marketing.py` → Calculates KPIs such as CTR, CVR, CPC, CPA, ROAS, and Margin.  
 
-Activate the virtual environment:source venv/bin/activate  # Linux/Mac
+## Pipeline Workflow
+1. **Bronze Layer**  
+   - Generates synthetic marketing data including customer details, campaign metrics, and timestamps.  
+   - Stores files in `data/bronze/`.  
 
-venv\Scripts\activate     # Windows
+2. **Silver Layer**  
+   - Reads the latest Bronze dataset.  
+   - Removes duplicates, standardizes data types, handles missing values, and applies validations.  
+   - Stores results in `data/silver/`.  
 
+3. **Gold Layer**  
+   - Reads the latest Silver dataset.  
+   - Calculates key marketing KPIs.  
+   - Stores results in `data/gold/`.  
 
-Run the scripts in sequence:
+## Prerequisites
+- **pyenv** installed for Python version management.  
+- Python version aligned with `.python-version`.  
+- A virtual environment with required dependencies from `requirements.txt`.  
 
-python src/bronze/generate_raw_marketing_data.py
-python src/silver/clean_transform_marketing.py
-python src/gold/aggregate_kpi_marketing.py
+## How to Run
 
+1. Set the Python version (based on `.python-version`):  
+  pyenv local
 
+2. Verify Python version:
+  python --version
+
+3. Activate the virtual environment:
+- Linux/Mac: source venv/bin/activate
+- Windows: venv\Scripts\activate
+
+4. Run the pipeline scripts in sequence:
+- python src/bronze/generate_raw_marketing_data.py
+- python src/silver/clean_transform_marketing.py
+- python src/gold/calculate_kpi_marketing.py
 
 Output
 
-Bronze: Raw data files in data/bronze containing customer and campaign details.
-
-Silver: Cleaned and validated data files in data/silver with standardized formats.
-
-Gold: KPI data files in data/gold with metrics such as CTR (Click-Through Rate), CVR (Conversion Rate), CPC (Cost Per Click), CPA (Cost Per Acquisition), ROAS (Return on Ad Spend), and margin.
-
-Notes
-
-The pyenv local command ensures the Python version matches .python-version for compatibility.
-
-Each script processes the latest Parquet file in its respective input directory based on the timestamp in the filename.
-
-Comprehensive logging is implemented to facilitate debugging and monitoring.
-
-Data is saved in both Parquet (optimized for storage and processing) and CSV (human-readable) formats.
-
-The pipeline is designed to run sequentially, with each script depending on the output of the previous layer.
+Bronze: Raw data containing customer and campaign details.
+Silver: Cleaned and validated datasets with standardized formats.
+Gold: KPI datasets including:
+  - CTR (Click-Through Rate)
+  - CVR (Conversion Rate)
+  - CPC (Cost per Click)
+  - CPA (Cost per Acquisition)
+  - ROAS (Return on Ad Spend)
+  - Margin
