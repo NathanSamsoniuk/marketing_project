@@ -63,20 +63,44 @@ requirements.txt # Python dependencies
 
 ## How to Run
 
-1. Set the Python version (based on `.python-version`):  
-  pyenv local
+1. **Set the Python version** (based on `.python-version`)
 
-2. Verify Python version:
-  python --version
+   - If you have `pyenv` installed:
+     ```bash
+     # Option A: set local version by reading the file (Unix shells)
+     pyenv local $(cat .python-version)
 
-3. Activate the virtual environment:
-- Linux/Mac: source venv/bin/activate
-- Windows: venv\Scripts\activate
+     # Option B: open .python-version and run with the exact version shown
+     pyenv local <python-version>
+     ```
+     *If the version is not installed yet, run `pyenv install <python-version>` first.*
 
-4. Run the pipeline scripts in sequence:
-- python src/bronze/generate_raw_marketing_data.py
-- python src/silver/clean_transform_marketing.py
-- python src/gold/calculate_kpi_marketing.py
+   - Verify Python version:
+     ```bash
+     python --version
+     ```
+
+2. **Create and activate a virtual environment** (if you don't already have one)
+   ```bash
+   # Create venv
+   python -m venv venv
+
+   # Activate (Linux / macOS)
+   source venv/bin/activate
+
+   # Activate (Windows - CMD)
+   venv\Scripts\activate
+
+   # Activate (Windows - PowerShell)
+   venv\Scripts\Activate.ps1
+3. **Install dependencies**
+  pip install -r requirements.txt
+
+4. **Run the pipeline scripts in sequence**
+  python src/bronze/generate_raw_marketing_data.py
+  python src/silver/clean_transform_marketing.py
+  python src/gold/calculate_kpi_marketing.py
+
 
 Output
 
