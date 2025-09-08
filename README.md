@@ -99,11 +99,11 @@ requirements.txt # Python dependencies
     ```
 
 4. **Run the pipeline scripts in sequence**
-  ```bash
-  python src/bronze/generate_raw_marketing_data.py
-  python src/silver/clean_transform_marketing.py
-  python src/gold/calculate_kpi_marketing.py
-  ```
+    ```bash
+    python src/bronze/generate_raw_marketing_data.py
+    python src/silver/clean_transform_marketing.py
+    python src/gold/calculate_kpi_marketing.py
+    ```
   
 
 
