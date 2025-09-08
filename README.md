@@ -94,12 +94,17 @@ requirements.txt # Python dependencies
    # Activate (Windows - PowerShell)
    venv\Scripts\Activate.ps1
 3. **Install dependencies**
-  pip install -r requirements.txt
+    ```bash
+    pip install -r requirements.txt
+    ```
 
 4. **Run the pipeline scripts in sequence**
+  ```bash
   python src/bronze/generate_raw_marketing_data.py
   python src/silver/clean_transform_marketing.py
   python src/gold/calculate_kpi_marketing.py
+  ```
+  
 
 
 Output
