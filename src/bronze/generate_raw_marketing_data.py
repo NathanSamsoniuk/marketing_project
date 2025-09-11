@@ -10,7 +10,6 @@ import logging
 import os
 from datetime import datetime
 import random
-
 import numpy as np
 import pandas as pd
 from faker import Faker
@@ -22,40 +21,47 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialize Faker for synthetic data generation
+# Initialize Faker
 fake = Faker()
 
 # Configuration constants
-NUM_CUSTOMERS = [5000]  # Number of customers to generate
+NUM_CUSTOMERS = [5000]
 OUTPUT_DIR = "data/bronze"
 CAMPAIGN_IDS = [
     "92c14ef8-a59a-4a78-9670-9e527d9947a1",
     "4c967788-de7b-4626-bbca-c7e7144da864",
 ]
 CAMPAIGN_CHANNELS = ["email", "social_media", "search", "display"]
-CAMPAIGN_TYPES = ["brand_awareness", "product_launch", "seasonal", "retargeting"]
+CAMPAIGN_TYPES = ["product_launch"]
 ADVERTISING_PLATFORMS = ["Google Ads", "Facebook Ads", "Instagram Ads", "Email Campaign"]
-REVENUE_VALUES = [1700, 2200]
+
+# Mapping of campaign_channel to advertising_platform
+CHANNEL_TO_PLATFORM = {
+    "email": ["Email Campaign"],
+    "social_media": ["Facebook Ads", "Instagram Ads"],
+    "search": ["Google Ads"],
+    "display": ["Google Ads", "Facebook Ads", "Instagram Ads"]
+}
+
+# Revenue values for conversions
+REVENUE_VALUES = [300, 500, 800, 1200, 2000]
+
 AGE_RANGE = (18, 65)
 INCOME_RANGE = (1000, 10000)
 DATE_START = datetime(2025, 8, 6)
 DATE_END = datetime(2025, 9, 6)
 
+# Costs per channel (in BRL)
+COST_PER_EMAIL = 0.20  # Cost per email sent
+CPM_SOCIAL_DISPLAY = 49.34  # Cost per thousand impressions (Meta/Google)
+CPC_SEARCH = 22.23  # Cost per click (Google Ads)
 
 def generate_raw_data(num_customers: int, output_dir: str) -> None:
-    """Generate synthetic marketing data and save it to the bronze layer.
-
-    Args:
-        num_customers (int): Number of customer records to generate.
-        output_dir (str): Directory to save the output files.
-
-    Raises:
-        OSError: If there is an issue creating the output directory or saving files.
-    """
+    """Generate synthetic marketing data and save to bronze layer."""
     logger.info(f"Generating {num_customers} customer records...")
     data = []
 
-    for _ in range(num_customers):
+    for i in range(num_customers):
         customer_id = fake.uuid4()
         age = random.randint(*AGE_RANGE)
         gender = random.choice(["M", "F"])
@@ -64,7 +70,10 @@ def generate_raw_data(num_customers: int, output_dir: str) -> None:
         campaign_channel = random.choice(CAMPAIGN_CHANNELS)
         campaign_type = random.choice(CAMPAIGN_TYPES)
 
-        # Generate impressions based on campaign channel
+        # Select advertising_platform based on campaign_channel
+        advertising_platform = random.choice(CHANNEL_TO_PLATFORM[campaign_channel])
+
+        # Impressions vary by channel
         if campaign_channel == "display":
             impressions = random.randint(5, 35)
         elif campaign_channel == "social_media":
@@ -74,39 +83,49 @@ def generate_raw_data(num_customers: int, output_dir: str) -> None:
         else:  # search
             impressions = random.randint(1, 10)
 
-        # Generate conversions (15% chance of conversion)
-        conversions = random.randint(1, 2) if random.random() < 0.15 else 0
+        # Clicks based on channel-specific CTR
+        ctr_lookup = {
+            "display": 0.01,
+            "social_media": 0.05,
+            "email": 0.12,
+            "search": 0.08
+        }
+        ctr = ctr_lookup[campaign_channel]
+        clicks = min(impressions, max(0, int(np.random.binomial(impressions, ctr))))
 
-        # Calculate revenue based on conversions
-        revenue = conversions * random.choice(REVENUE_VALUES)
+        # Website visits: 60–85% of clicks
+        if clicks == 0:
+            website_visits = 0
+        else:
+            website_visits = sum(1 for _ in range(clicks) if random.random() < random.uniform(0.6, 0.85))
 
-        # Generate clicks, ensuring at least 10 if there are conversions
-        clicks = (
-            random.randint(max(10, conversions), 32)
-            if conversions > 0
-            else 0 if random.random() < 0.50 else random.randint(1, 32)
-        )
-
-        # Generate website visits (only if there are clicks)
-        website_visits = 0 if clicks == 0 else random.randint(1, min(clicks, 3))
-
-        # Generate time on site (only if there are website visits)
+        # Time on site (seconds) if there are visits
         time_on_site = 0 if website_visits == 0 else random.randint(60, 600)
 
-        # Generate previous purchases (none for retargeting campaigns)
-        previous_purchases = 0 if campaign_type == "retargeting" else random.randint(0, 2)
+        # Conversions: 3% chance if there are visits
+        conversions = 0
+        if website_visits > 0:
+            if random.random() < 0.03:
+                conversions = random.choices([1, 2], weights=[0.85, 0.15])[0]
 
-        # Calculate ad spend based on impressions
-        ad_spend = round(impressions * random.uniform(0.05, 0.20), 2)
+        # Revenue based on conversions and ticket value
+        revenue = conversions * random.choice(REVENUE_VALUES)
 
-        # Generate additional fields
-        date_received = fake.date_time_between(
-            start_date=DATE_START, end_date=DATE_END
-        )
-        advertising_platform = random.choice(ADVERTISING_PLATFORMS)
+        # Previous purchases
+        previous_purchases = random.randint(0, 2)
+
+        # Ad spend based on channel
+        if campaign_channel == "email":
+            ad_spend = round(impressions * COST_PER_EMAIL, 2)
+        elif campaign_channel == "search":
+            ad_spend = round(clicks * CPC_SEARCH, 2)
+        else:  # social_media and display
+            ad_spend = round((impressions / 1000) * CPM_SOCIAL_DISPLAY, 2)
+
+        # Dates
+        date_received = fake.date_time_between(start_date=DATE_START, end_date=DATE_END)
         extraction_date = datetime.now()
 
-        # Append record to data list
         data.append({
             "customer_id": customer_id,
             "age": age,
@@ -128,17 +147,17 @@ def generate_raw_data(num_customers: int, output_dir: str) -> None:
             "extraction_date": extraction_date,
         })
 
-    # Create DataFrame
+    # Create DataFrame and save
     df = pd.DataFrame(data)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     logger.info(f"Saving data with timestamp {timestamp}...")
 
     try:
+        os.makedirs(output_dir, exist_ok=True)
         # Save as Parquet
         parquet_path = os.path.join(output_dir, f"marketing_{timestamp}.parquet")
         df.to_parquet(parquet_path, index=False)
         logger.info(f"Data saved to {parquet_path}")
-
         # Save as CSV
         csv_path = os.path.join(output_dir, f"marketing_{timestamp}.csv")
         df.to_csv(csv_path, index=False)
@@ -147,16 +166,6 @@ def generate_raw_data(num_customers: int, output_dir: str) -> None:
         logger.error(f"Failed to save data: {e}")
         raise
 
-
 if __name__ == "__main__":
-    # Ensure output directory exists
-    try:
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
-        logger.info(f"Output directory {OUTPUT_DIR} ensured.")
-    except OSError as e:
-        logger.error(f"Failed to create output directory {OUTPUT_DIR}: {e}")
-        raise
-
-    # Generate data for each customer count
     for num in NUM_CUSTOMERS:
         generate_raw_data(num, OUTPUT_DIR)
