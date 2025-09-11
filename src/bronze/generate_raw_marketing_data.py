@@ -51,7 +51,7 @@ INCOME_RANGE = (1000, 10000)
 DATE_START = datetime(2025, 8, 6)
 DATE_END = datetime(2025, 9, 6)
 
-# Costs per channel (in BRL)
+# Costs per channel
 COST_PER_EMAIL = 0.20  # Cost per email sent
 CPM_SOCIAL_DISPLAY = 49.34  # Cost per thousand impressions (Meta/Google)
 CPC_SEARCH = 22.23  # Cost per click (Google Ads)
