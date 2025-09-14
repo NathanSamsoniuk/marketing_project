@@ -36,7 +36,6 @@ def get_latest_bronze_file(input_dir: str) -> str:
         logger.error("No Parquet files found in the bronze layer.")
         raise FileNotFoundError("No Parquet files found in the bronze layer.")
 
-    # Função para extrair timestamp como datetime
     def extract_datetime(filename: str) -> datetime:
         try:
             timestamp_str = filename.replace("marketing_", "").replace(".parquet", "")
@@ -45,7 +44,6 @@ def get_latest_bronze_file(input_dir: str) -> str:
             logger.error(f"Failed to parse timestamp from filename '{filename}': {e}")
             raise
 
-    # Ordena os arquivos do mais recente para o mais antigo
     bronze_files.sort(key=extract_datetime, reverse=True)
 
     latest_file = os.path.join(input_dir, bronze_files[0])
