@@ -25,7 +25,9 @@ OUTPUT_DIR = "data/gold"
 
 
 def get_latest_silver_file(input_dir: str) -> str:
+    """Retrieve the most recent Parquet file from the silver layer using datetime parsing."""
     logger.info(f"Searching for the latest Parquet file in {input_dir}...")
+    
     silver_files = [
         f for f in os.listdir(input_dir)
         if f.startswith("marketing") and f.endswith(".parquet")
@@ -35,15 +37,27 @@ def get_latest_silver_file(input_dir: str) -> str:
         raise FileNotFoundError("No Parquet files found in the silver layer.")
 
     def extract_datetime(filename: str) -> datetime:
-        timestamp_str = filename.replace("marketing_metrics_", "").replace(".parquet", "")
-        return datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
+        try:
+            # Remove prefix e extensão
+            timestamp_str = filename.replace("marketing_", "").replace(".parquet", "").strip()
+            # Tenta converter para datetime
+            return datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
+        except ValueError:
+            # Caso não bata o formato exato, tenta com outros formatos possíveis
+            for fmt in ["%Y%m%d_%H%M%S", "%Y%m%d_%H%M"]:
+                try:
+                    return datetime.strptime(timestamp_str, fmt)
+                except ValueError:
+                    continue
+            logger.error(f"Failed to parse timestamp from filename '{filename}'")
+            raise
 
+    # Ordena pelo timestamp extraído, mais recente primeiro
     silver_files.sort(key=extract_datetime, reverse=True)
+
     latest_file = os.path.join(input_dir, silver_files[0])
     logger.info(f"Latest file found: {latest_file}")
     return latest_file
-
-
 
 def calculate_metrics(input_path: str, output_dir: str) -> None:
     """Calculate marketing KPIs for each record and save to the gold layer.
