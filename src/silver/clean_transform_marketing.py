@@ -93,7 +93,6 @@ def process_silver(input_path: str, output_dir: str) -> None:
     logger.info("Data types standardized.")
 
     # Handle missing values
-    df["income"] = df["income"].fillna(df["income"].mean())
     df["ad_spend"] = df["ad_spend"].fillna(0)
     logger.info("Missing values handled.")
 
