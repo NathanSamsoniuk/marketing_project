@@ -65,9 +65,11 @@ def process_silver(input_path: str, output_dir: str) -> None:
         logger.error(f"Failed to read Parquet file: {e}")
         raise
 
-    # Remove duplicates based on customer_id
-    df = df.drop_duplicates(subset=["customer_id"], keep="first")
-    logger.info(f"Removed duplicates; {len(df)} records remain.")
+    # Remove duplicates based on customer_id, keeping the most recent date_received
+    df_sorted = df.sort_values(by="date_received", ascending=False)
+    df = df_sorted.drop_duplicates(subset=["customer_id"], keep="first")
+    logger.info(f"Removed duplicates; {len(df)} records remain (most recent kept per customer).")
+
 
     # Standardize data types
     df = df.astype({
