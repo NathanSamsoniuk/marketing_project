@@ -25,17 +25,6 @@ OUTPUT_DIR = "data/gold"
 
 
 def get_latest_silver_file(input_dir: str) -> str:
-    """Retrieve the most recent Parquet file from the silver layer.
-
-    Args:
-        input_dir (str): Directory containing silver layer files.
-
-    Returns:
-        str: Path to the most recent Parquet file.
-
-    Raises:
-        FileNotFoundError: If no Parquet files are found in the input directory.
-    """
     logger.info(f"Searching for the latest Parquet file in {input_dir}...")
     silver_files = [
         f for f in os.listdir(input_dir)
@@ -45,13 +34,15 @@ def get_latest_silver_file(input_dir: str) -> str:
         logger.error("No Parquet files found in the silver layer.")
         raise FileNotFoundError("No Parquet files found in the silver layer.")
 
-    # Sort by timestamp in filename (most recent first)
-    silver_files.sort(
-        key=lambda x: x.split("_")[-1].replace(".parquet", ""), reverse=True
-    )
+    def extract_datetime(filename: str) -> datetime:
+        timestamp_str = filename.replace("marketing_metrics_", "").replace(".parquet", "")
+        return datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
+
+    silver_files.sort(key=extract_datetime, reverse=True)
     latest_file = os.path.join(input_dir, silver_files[0])
     logger.info(f"Latest file found: {latest_file}")
     return latest_file
+
 
 
 def calculate_metrics(input_path: str, output_dir: str) -> None:
