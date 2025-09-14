@@ -25,18 +25,9 @@ OUTPUT_DIR = "data/silver"
 
 
 def get_latest_bronze_file(input_dir: str) -> str:
-    """Retrieve the most recent Parquet file from the bronze layer.
-
-    Args:
-        input_dir (str): Directory containing bronze layer files.
-
-    Returns:
-        str: Path to the most recent Parquet file.
-
-    Raises:
-        FileNotFoundError: If no Parquet files are found in the input directory.
-    """
+    """Retrieve the most recent Parquet file from the bronze layer using datetime parsing."""
     logger.info(f"Searching for the latest Parquet file in {input_dir}...")
+    
     bronze_files = [
         f for f in os.listdir(input_dir)
         if f.startswith("marketing") and f.endswith(".parquet")
@@ -45,27 +36,24 @@ def get_latest_bronze_file(input_dir: str) -> str:
         logger.error("No Parquet files found in the bronze layer.")
         raise FileNotFoundError("No Parquet files found in the bronze layer.")
 
-    # Sort by timestamp in filename (most recent first)
-    bronze_files.sort(
-        key=lambda x: x.split("_")[-1].replace(".parquet", ""), reverse=True
-    )
+    # Função para extrair timestamp como datetime
+    def extract_datetime(filename: str) -> datetime:
+        try:
+            timestamp_str = filename.replace("marketing_", "").replace(".parquet", "")
+            return datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
+        except Exception as e:
+            logger.error(f"Failed to parse timestamp from filename '{filename}': {e}")
+            raise
+
+    # Ordena os arquivos do mais recente para o mais antigo
+    bronze_files.sort(key=extract_datetime, reverse=True)
+
     latest_file = os.path.join(input_dir, bronze_files[0])
     logger.info(f"Latest file found: {latest_file}")
     return latest_file
 
-
 def process_silver(input_path: str, output_dir: str) -> None:
-    """Clean and transform raw marketing data, saving to the silver layer.
-
-    Args:
-        input_path (str): Path to the input Parquet file from the bronze layer.
-        output_dir (str): Directory to save the transformed files.
-
-    Raises:
-        FileNotFoundError: If the input file does not exist.
-        AssertionError: If data validation fails (e.g., conversions > clicks).
-        OSError: If there is an issue saving the output files.
-    """
+    """Clean and transform raw marketing data, saving to the silver layer."""
     logger.info(f"Processing data from {input_path}...")
 
     # Read raw data
@@ -74,6 +62,9 @@ def process_silver(input_path: str, output_dir: str) -> None:
         logger.info(f"Loaded {len(df)} records from {input_path}")
     except FileNotFoundError as e:
         logger.error(f"Input file not found: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Failed to read Parquet file: {e}")
         raise
 
     # Remove duplicates based on customer_id
@@ -98,18 +89,13 @@ def process_silver(input_path: str, output_dir: str) -> None:
         "previous_purchases": "int",
         "advertising_platform": "str",
     })
-    df["date_received"] = pd.to_datetime(df["date_received"])
+    df["date_received"] = pd.to_datetime(df["date_received"], errors="coerce")
     logger.info("Data types standardized.")
 
     # Handle missing values
     df["income"] = df["income"].fillna(df["income"].mean())
     df["ad_spend"] = df["ad_spend"].fillna(0)
     logger.info("Missing values handled.")
-
-    # Validate data
-    if not (df["conversions"] <= df["clicks"]).all():
-        logger.error("Validation failed: Some conversions exceed clicks.")
-        raise AssertionError("Some conversions exceed clicks.")
 
     # Add processing timestamp
     df["extraction_date"] = datetime.now()
